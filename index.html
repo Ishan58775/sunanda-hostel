@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sunanda Girls Hostel | Secure Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+
+        body {
+            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('https://images.unsplash.com/photo-1555854877-bab0e564b8d5?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80') center/cover no-repeat;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 40px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 15px 25px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+
+        .login-container h2 { color: #d4af37; margin-bottom: 5px; font-weight: 600; }
+        .login-container p { font-size: 13px; color: #ccc; margin-bottom: 25px; }
+
+        .btn-google {
+            background: white;
+            color: #333;
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            transition: 0.3s;
+        }
+        .btn-google:hover { background: #f1f1f1; box-shadow: 0 0 15px rgba(255,255,255,0.3); }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 20px 0;
+            color: #aaa;
+            font-size: 12px;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        .divider:not(:empty)::before { margin-right: .25em; }
+        .divider:not(:empty)::after { margin-left: .25em; }
+
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            outline: none;
+        }
+        .input-group input::placeholder { color: rgba(255, 255, 255, 0.6); }
+
+        .btn-gold {
+            background: #d4af37;
+            color: #111;
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .btn-gold:hover { background: #f1c40f; box-shadow: 0 0 15px #d4af37; }
+
+        #otpSection { display: none; margin-top: 15px; }
+        .error-msg { color: #ff4757; font-size: 13px; margin-top: 10px; display: none; }
+
+        /* Captcha container needs space */
+        #recaptcha-container { margin-top: 10px; display: flex; justify-content: center; }
+
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <h2>Sunanda Girls Hostel</h2>
+        <p>Secure Access Portal</p>
+
+        <button id="googleLoginBtn" class="btn-google">
+            <i class="fab fa-google" style="color: #DB4437; font-size: 18px;"></i> Continue with Google
+        </button>
+
+        <div class="divider">OR</div>
+
+        <div id="phoneSection">
+            <div class="input-group">
+                <input type="tel" id="phoneNumber" placeholder="+91 9876543210" required>
+            </div>
+            <div id="recaptcha-container"></div>
+            <button id="sendOtpBtn" class="btn-gold">Send OTP via SMS</button>
+        </div>
+
+        <div id="otpSection">
+            <div class="input-group">
+                <input type="text" id="otpCode" placeholder="Enter 6-digit OTP">
+            </div>
+            <button id="verifyOtpBtn" class="btn-gold">Verify & Login</button>
+        </div>
+
+        <p class="error-msg" id="errorMsg"></p>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
+    <script>
+        // Your exact Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAd_Tj_oH-VEzPMo3OUM0O8JEjG7lxdZGk",
+            authDomain: "sunanda-hostel-app.firebaseapp.com",
+            projectId: "sunanda-hostel-app",
+            storageBucket: "sunanda-hostel-app.firebasestorage.app",
+            messagingSenderId: "1034504045323",
+            appId: "1:1034504045323:web:13376f6da4d4820c38d80e"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+
+        const errorMsg = document.getElementById('errorMsg');
+
+        // --- 1. GOOGLE LOGIN LOGIC ---
+        document.getElementById('googleLoginBtn').addEventListener('click', () => {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            firebase.auth().signInWithPopup(provider)
+                .then((result) => {
+                    window.location.href = "dashboard.html";
+                })
+                .catch((error) => {
+                    errorMsg.style.display = "block";
+                    errorMsg.innerText = error.message;
+                });
+        });
+
+        // --- 2. PHONE OTP LOGIC ---
+        let confirmationResult;
+
+        // Initialize invisible reCAPTCHA (Required by Google for phone auth)
+        window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+            'size': 'invisible',
+            'callback': (response) => {
+                // reCAPTCHA solved
+            }
+        });
+
+        // Send OTP
+        document.getElementById('sendOtpBtn').addEventListener('click', () => {
+            const phoneNumber = document.getElementById('phoneNumber').value;
+            const appVerifier = window.recaptchaVerifier;
+
+            if(!phoneNumber.startsWith("+91")) {
+                errorMsg.style.display = "block";
+                errorMsg.innerText = "Please include country code (+91)";
+                return;
+            }
+
+            firebase.auth().signInWithPhoneNumber(phoneNumber, appVerifier)
+                .then((result) => {
+                    confirmationResult = result;
+                    document.getElementById('phoneSection').style.display = 'none';
+                    document.getElementById('otpSection').style.display = 'block';
+                    errorMsg.style.display = "none";
+                    alert("OTP Sent! Check your phone.");
+                }).catch((error) => {
+                    errorMsg.style.display = "block";
+                    errorMsg.innerText = error.message;
+                    window.recaptchaVerifier.render().then(function(widgetId) {
+                        grecaptcha.reset(widgetId);
+                    });
+                });
+        });
+
+        // Verify OTP
+        document.getElementById('verifyOtpBtn').addEventListener('click', () => {
+            const code = document.getElementById('otpCode').value;
+            confirmationResult.confirm(code).then((result) => {
+                window.location.href = "dashboard.html";
+            }).catch((error) => {
+                errorMsg.style.display = "block";
+                errorMsg.innerText = "Invalid OTP. Please try again.";
+            });
+        });
+    </script>
+</body>
+</html>
