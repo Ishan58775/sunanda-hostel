@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Portal | Sunanda Girls Hostel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        
+        body {
+            background-color: #f8fafc; /* Light, clean background for students */
+            color: #334155;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: #1e293b;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            color: white;
+        }
+
+        .brand { font-size: 20px; font-weight: 600; color: #d4af37; margin-bottom: 40px; text-align: center; }
+
+        .nav-link {
+            padding: 12px 15px; margin-bottom: 10px; border-radius: 8px; color: #cbd5e1;
+            text-decoration: none; display: flex; align-items: center; transition: 0.3s; cursor: pointer;
+        }
+        .nav-link i { margin-right: 15px; width: 20px; text-align: center; }
+        .nav-link:hover, .nav-link.active { background: #d4af37; color: #0f172a; font-weight: 500; }
+        
+        .logout-btn { margin-top: auto; background: #ef4444; color: white; justify-content: center; font-weight: 600; }
+        .logout-btn:hover { background: #dc2626; color: white; }
+
+        /* Main Content */
+        .main-content { flex: 1; padding: 40px; overflow-y: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .header h1 { font-weight: 600; font-size: 26px; color: #0f172a; }
+        
+        .status-badge {
+            background: #f1f5f9; color: #475569; padding: 8px 16px; border-radius: 20px;
+            font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px;
+        }
+
+        /* Form Card */
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; max-width: 800px; }
+        .card-title { margin-bottom: 25px; font-size: 20px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; font-weight: 600; }
+
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group.full-width { grid-column: span 2; }
+        .form-group label { font-size: 14px; color: #64748b; margin-bottom: 8px; font-weight: 500; }
+        
+        .form-group input, .form-group select {
+            padding: 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px;
+            color: #334155; outline: none; transition: 0.3s;
+        }
+        .form-group input:focus, .form-group select:focus { border-color: #d4af37; box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2); }
+
+        .btn-gold {
+            background: #d4af37; color: #0f172a; border: none; padding: 14px 24px; border-radius: 8px;
+            font-weight: 600; font-size: 16px; cursor: pointer; margin-top: 25px; width: 100%; transition: 0.3s;
+        }
+        .btn-gold:hover { background: #f1c40f; box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4); }
+
+        .success-msg { display: none; background: #dcfce7; color: #166534; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-weight: 500; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="brand">Sunanda Hostel</div>
+        <a class="nav-link active"><i class="fas fa-file-alt"></i> My Application</a>
+        <a class="nav-link"><i class="fas fa-bed"></i> 3D Room View</a>
+        <a class="nav-link"><i class="fas fa-headset"></i> Help Desk</a>
+        <a class="nav-link logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <div>
+                <h1>Welcome, Student!</h1>
+                <p style="color: #64748b; margin-top: 5px;">Please complete your profile to apply for a room.</p>
+            </div>
+            <div class="status-badge" id="appStatus">
+                <i class="fas fa-edit"></i> Not Submitted
+            </div>
+        </div>
+
+        <div class="card">
+            <div id="successMessage" class="success-msg">
+                <i class="fas fa-check-circle"></i> Application Sent! The Admin will review it shortly.
+            </div>
+
+            <div class="card-title">Personal Details</div>
+            <form id="studentForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="stuName" required placeholder="e.g. Priya Sharma">
+                    </div>
+                    <div class="form-group">
+                        <label>Contact Number</label>
+                        <input type="tel" id="stuPhone" required placeholder="+91">
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Aadhaar Number</label>
+                        <input type="text" id="stuAadhaar" required placeholder="12-digit Aadhaar Number">
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Room Preference</label>
+                        <select id="stuRoom" required>
+                            <option value="">-- Select Preference --</option>
+                            <option value="AC - 2 Seater">AC - 2 Seater</option>
+                            <option value="Non-AC - 2 Seater">Non-AC - 2 Seater</option>
+                            <option value="Non-AC - 4 Seater">Non-AC - 4 Seater</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="btn-gold" id="saveBtn">Submit Application to Admin</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAd_Tj_oH-VEzPMo3OUM0O8JEjG7lxdZGk",
+            authDomain: "sunanda-hostel-app.firebaseapp.com",
+            projectId: "sunanda-hostel-app",
+            storageBucket: "sunanda-hostel-app.firebasestorage.app",
+            messagingSenderId: "1034504045323",
+            appId: "1:1034504045323:web:13376f6da4d4820c38d80e"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        let currentUserIdentifier = "";
+
+        // Check if logged in
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+                // Use email or phone as their unique database ID
+                currentUserIdentifier = user.email ? user.email : user.phoneNumber;
+                loadExistingData();
+            } else {
+                window.location.href = "index.html"; // Kick out if not logged in
+            }
+        });
+
+        // Load data if they already applied
+        function loadExistingData() {
+            db.collection("students").doc(currentUserIdentifier).get().then((doc) => {
+                if (doc.exists) {
+                    const data = doc.data();
+                    document.getElementById('stuName').value = data.name || "";
+                    document.getElementById('stuPhone').value = data.phone || "";
+                    document.getElementById('stuAadhaar').value = data.aadhaar || "";
+                    document.getElementById('stuRoom').value = data.room_preference || "";
+                    
+                    if(data.status === "Pending") {
+                        document.getElementById('appStatus').innerHTML = '<i class="fas fa-clock"></i> Pending Approval';
+                        document.getElementById('appStatus').style.background = '#fef08a';
+                        document.getElementById('appStatus').style.color = '#854d0e';
+                        document.getElementById('saveBtn').innerText = "Update Application";
+                    } else if(data.status === "Approved") {
+                        document.getElementById('appStatus').innerHTML = '<i class="fas fa-check-circle"></i> Approved';
+                        document.getElementById('appStatus').style.background = '#dcfce7';
+                        document.getElementById('appStatus').style.color = '#166534';
+                        document.getElementById('saveBtn').style.display = 'none'; // Lock form if approved
+                    }
+                }
+            });
+        }
+
+        // Save data to Firebase
+        document.getElementById('studentForm').addEventListener('submit', (e) => {
+            e.preventDefault(); 
+            const btn = document.getElementById('saveBtn');
+            btn.innerText = "Saving...";
+
+            const studentData = {
+                name: document.getElementById('stuName').value,
+                phone: document.getElementById('stuPhone').value,
+                aadhaar: document.getElementById('stuAadhaar').value,
+                room_preference: document.getElementById('stuRoom').value,
+                status: "Pending", // Admin changes this to Approved later
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            db.collection("students").doc(currentUserIdentifier).set(studentData)
+                .then(() => {
+                    document.getElementById('successMessage').style.display = "block";
+                    btn.innerText = "Update Application";
+                    document.getElementById('appStatus').innerHTML = '<i class="fas fa-clock"></i> Pending Approval';
+                    document.getElementById('appStatus').style.background = '#fef08a';
+                    document.getElementById('appStatus').style.color = '#854d0e';
+                    setTimeout(() => { document.getElementById('successMessage').style.display = "none"; }, 4000);
+                })
+                .catch((error) => {
+                    alert("Error saving: " + error.message);
+                    btn.innerText = "Submit Application to Admin";
+                });
+        });
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            firebase.auth().signOut().then(() => {
+                window.location.href = "index.html";
+            });
+        });
+    </script>
+</body>
+</html>
