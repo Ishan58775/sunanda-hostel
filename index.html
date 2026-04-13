@@ -98,9 +98,7 @@
         #otpSection { display: none; margin-top: 15px; }
         .error-msg { color: #ff4757; font-size: 13px; margin-top: 10px; display: none; }
 
-        /* Captcha container needs space */
         #recaptcha-container { margin-top: 10px; display: flex; justify-content: center; }
-
     </style>
 </head>
 <body>
@@ -135,9 +133,9 @@
 
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
     <script>
-        // Your exact Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyAd_Tj_oH-VEzPMo3OUM0O8JEjG7lxdZGk",
             authDomain: "sunanda-hostel-app.firebaseapp.com",
@@ -148,15 +146,38 @@
         };
         
         firebase.initializeApp(firebaseConfig);
-
+        const db = firebase.firestore();
         const errorMsg = document.getElementById('errorMsg');
 
-        // --- 1. GOOGLE LOGIN LOGIC ---
+        // --- SMART ROUTING LOGIC ---
+        function routeUser(user) {
+            const identifier = user.email ? user.email : user.phoneNumber;
+
+            // 1. MASTER ADMIN CHECK (Protects you from lockouts)
+            if (identifier === "ishanking58775@gmail.com") { 
+                window.location.href = "dashboard.html";
+                return;
+            }
+
+            // 2. CHECK DATABASE FOR OTHER ADMINS
+            db.collection("admins").doc(identifier).get().then((doc) => {
+                if (doc.exists) {
+                    window.location.href = "dashboard.html"; // They are on the admin list
+                } else {
+                    window.location.href = "student-dashboard.html"; // Default to student
+                }
+            }).catch((error) => {
+                console.error("Database error:", error);
+                window.location.href = "student-dashboard.html"; 
+            });
+        }
+
+        // --- GOOGLE LOGIN ---
         document.getElementById('googleLoginBtn').addEventListener('click', () => {
             const provider = new firebase.auth.GoogleAuthProvider();
             firebase.auth().signInWithPopup(provider)
                 .then((result) => {
-                    window.location.href = "dashboard.html";
+                    routeUser(result.user);
                 })
                 .catch((error) => {
                     errorMsg.style.display = "block";
@@ -164,29 +185,21 @@
                 });
         });
 
-        // --- 2. PHONE OTP LOGIC ---
+        // --- PHONE LOGIN ---
         let confirmationResult;
-
-        // Initialize invisible reCAPTCHA (Required by Google for phone auth)
         window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-            'size': 'invisible',
-            'callback': (response) => {
-                // reCAPTCHA solved
-            }
+            'size': 'invisible'
         });
 
-        // Send OTP
         document.getElementById('sendOtpBtn').addEventListener('click', () => {
             const phoneNumber = document.getElementById('phoneNumber').value;
-            const appVerifier = window.recaptchaVerifier;
-
             if(!phoneNumber.startsWith("+91")) {
                 errorMsg.style.display = "block";
                 errorMsg.innerText = "Please include country code (+91)";
                 return;
             }
-
-            firebase.auth().signInWithPhoneNumber(phoneNumber, appVerifier)
+            
+            firebase.auth().signInWithPhoneNumber(phoneNumber, window.recaptchaVerifier)
                 .then((result) => {
                     confirmationResult = result;
                     document.getElementById('phoneSection').style.display = 'none';
@@ -196,17 +209,13 @@
                 }).catch((error) => {
                     errorMsg.style.display = "block";
                     errorMsg.innerText = error.message;
-                    window.recaptchaVerifier.render().then(function(widgetId) {
-                        grecaptcha.reset(widgetId);
-                    });
                 });
         });
 
-        // Verify OTP
         document.getElementById('verifyOtpBtn').addEventListener('click', () => {
             const code = document.getElementById('otpCode').value;
             confirmationResult.confirm(code).then((result) => {
-                window.location.href = "dashboard.html";
+                routeUser(result.user);
             }).catch((error) => {
                 errorMsg.style.display = "block";
                 errorMsg.innerText = "Invalid OTP. Please try again.";
